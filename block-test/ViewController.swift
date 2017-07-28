@@ -12,6 +12,9 @@ import ARKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
 
+    // Scene Variables
+    var spinnerNode: SCNNode?
+    
     @IBOutlet var sceneView: ARSCNView!
     
     override func viewDidLoad() {
@@ -24,7 +27,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.showsStatistics = true
         
         // Create a new scene
-        let scene = SCNScene(named: "art.scnassets/ship.scn")!
+        let scene = SCNScene(named: "art.scnassets/FidgetSpinner.dae")!
+        
+        // Find treeNode
+        self.spinnerNode = scene.rootNode.childNode(withName: "FidgetSpinner", recursively: true)
+
+        // Place treeNode at (0,0,-1)
+        // self.treeNode?.position = SCNVector3Make(0, 0, -1)
         
         // Set the scene to the view
         sceneView.scene = scene
@@ -76,5 +85,23 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     func sessionInterruptionEnded(_ session: ARSession) {
         // Reset tracking and/or remove existing anchors if consistent tracking is required
         
+    }
+    
+/*
+     // Override to create trees on touch
+ */
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let results = sceneView.hitTest(touch.location(in: sceneView), types: [ARHitTestResult.ResultType.featurePoint])
+        guard let hitFeature = results.last else { return }
+        let hitTransform = SCNMatrix4(hitFeature.worldTransform)
+        let hitPosition = SCNVector3Make(hitTransform.m41, hitTransform.m42, hitTransform.m43)
+        let spinnerClone = spinnerNode!.clone()
+        spinnerClone.position = hitPosition
+        sceneView.scene.rootNode.addChildNode(spinnerClone)
+        
+        let action = SCNAction.rotateBy(x: 0, y: CGFloat(2 * Double.pi), z: 0, duration: 3)
+        let repAction = SCNAction.repeatForever(action)
+        spinnerClone.runAction(repAction, forKey: "myrotate")
     }
 }
